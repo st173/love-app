@@ -1,0 +1,369 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #FF6B9D;
+  --secondary: #FFB6C1;
+  --accent: #FF4757;
+  --background: #FFF5F7;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(180deg, #FFF5F7 0%, #FFE4EC 50%, #FFD6E0 100%);
+  min-height: 100vh;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FFB6C1;
+  border-radius: 10px;
+}
+
+/* 动画 */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(2deg); }
+  75% { transform: translateY(-4px) rotate(-2deg); }
+}
+
+@keyframes pulse-heart {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-heart {
+  animation: pulse-heart 1.2s ease-in-out infinite;
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 2s ease-in-out infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* 渐变文字 */
+.gradient-text {
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF4757 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 玻璃效果 */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 卡片悬浮效果 */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(255, 107, 157, 0.15);
+}
+
+/* 按钮渐变 */
+.btn-gradient {
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF4757 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px rgba(255, 107, 157, 0.4);
+}
+
+/* 宠物容器 */
+.pet-container {
+  position: relative;
+  display: inline-block;
+}
+
+.pet-shadow {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 15px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+/* 任务完成动画 */
+.task-complete {
+  position: relative;
+  overflow: hidden;
+}
+
+.task-complete::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 2s infinite;
+}
+
+/* 底部导航样式优化 */
+.bottom-nav {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,1) 100%);
+  box-shadow: 0 -4px 20px rgba(255, 107, 157, 0.1);
+}
+
+/* 进度条 */
+.progress-bar {
+  background: linear-gradient(90deg, #FF6B9D 0%, #FF4757 100%);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+/* 标签样式 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag-pink {
+  background: linear-gradient(135deg, #FFE4EC 0%, #FFD6E0 100%);
+  color: #FF6B9D;
+}
+
+.tag-orange {
+  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+  color: #FF9800;
+}
+
+.tag-green {
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  color: #4CAF50;
+}
+
+/* 分割线 */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #FFD6E0, transparent);
+  margin: 16px 0;
+}
+
+/* 消息气泡 */
+.bubble {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.1);
+}
+
+.bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 20px;
+  border-width: 8px 8px 0;
+  border-style: solid;
+  border-color: white transparent transparent;
+}
+
+/* 爱心背景渐变 */
+.bg-gradient-love {
+  background: linear-gradient(180deg, #FFF5F7 0%, #FFE4EC 50%, #FFD6E0 100%);
+}
+
+/* 温暖卡片效果 */
+.warm-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,245,247,0.9) 100%);
+  border: 1px solid rgba(255, 182, 193, 0.3);
+  box-shadow: 0 4px 16px rgba(255, 107, 157, 0.1);
+}
+
+/* 闪烁星星效果 */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.animate-twinkle {
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+/* 心跳效果 */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  10% { transform: scale(1.1); }
+  20% { transform: scale(1); }
+  30% { transform: scale(1.1); }
+  40% { transform: scale(1); }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+/* 彩虹渐变文字 */
+.rainbow-text {
+  background: linear-gradient(90deg, #FF6B9D, #FF8C42, #FFD135, #4CAF50, #2196F3, #9C27B0);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+/* 柔和阴影 */
+.shadow-soft {
+  box-shadow: 0 4px 20px rgba(255, 107, 157, 0.15);
+}
+
+/* 发光效果 */
+.glow-pink {
+  box-shadow: 0 0 20px rgba(255, 107, 157, 0.4);
+}
+
+/* 渐变边框 */
+.gradient-border {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, #FF6B9D, #FF4757);
+  border-radius: 18px;
+  z-index: -1;
+}
+
+/* 浮动爱心装饰 */
+.floating-hearts {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* 涟漪效果 */
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 107, 157, 0.3);
+  animation: ripple 0.6s ease-out;
+}
+
+/* 滑入动画 */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.3s ease-out forwards;
+}
+
+/* 弹性动画 */
+@keyframes elastic {
+  0% { transform: scale(0); }
+  55% { transform: scale(1.1); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.animate-elastic {
+  animation: elastic 0.5s ease-out forwards;
+}
+
+/* 摇摆动画 */
+@keyframes swing {
+  20% { transform: rotate(15deg); }
+  40% { transform: rotate(-10deg); }
+  60% { transform: rotate(5deg); }
+  80% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-swing {
+  animation: swing 1s ease-out;
+  transform-origin: top center;
+}
