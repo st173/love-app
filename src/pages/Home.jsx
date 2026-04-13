@@ -172,6 +172,10 @@ export default function Home({ onNavigate }) {
   // 加载对方信息
   const loadPartnerInfo = async () => {
     try {
+      // 直接从localStorage获取最新的用户数据
+      const savedUser = localStorage.getItem('tanDanUser')
+      const currentUser = savedUser ? JSON.parse(savedUser) : userData
+
       const { createClient } = await import('@supabase/supabase-js')
       const supabase = createClient(
         'https://boqhqohnzcnvqllkqthg.supabase.co',
@@ -183,12 +187,25 @@ export default function Home({ onNavigate }) {
         .eq('id', coupleId)
         .single()
 
+      console.log('加载对方信息 - couples数据:', data)
+      console.log('当前用户昵称:', currentUser?.nickname)
+
       if (data) {
-        const isCreator = data.creator_nickname === userData?.nickname
-        setPartner({
-          nickname: isCreator ? data.joiner_nickname : data.creator_nickname,
-          avatar: isCreator ? data.joiner_avatar : data.creator_avatar
-        })
+        // 判断我是创建者还是加入者
+        const isCreator = data.creator_nickname === currentUser?.nickname
+        console.log('是否是创建者:', isCreator)
+
+        const partnerNickname = isCreator ? data.joiner_nickname : data.creator_nickname
+        const partnerAvatar = isCreator ? data.joiner_avatar : data.creator_avatar
+
+        console.log('对方昵称:', partnerNickname, '对方头像:', partnerAvatar)
+
+        if (partnerNickname) {
+          setPartner({
+            nickname: partnerNickname,
+            avatar: partnerAvatar
+          })
+        }
       }
     } catch (error) {
       console.error('获取对方信息失败:', error)

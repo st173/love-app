@@ -61,6 +61,10 @@ export default function Chat({ onNavigate, topic }) {
 
   const loadPartnerInfo = async () => {
     try {
+      // 直接从localStorage获取最新的用户数据
+      const savedUser = localStorage.getItem('tanDanUser')
+      const currentUser = savedUser ? JSON.parse(savedUser) : userData
+
       const { data } = await supabase
         .from('couples')
         .select('*')
@@ -69,11 +73,16 @@ export default function Chat({ onNavigate, topic }) {
 
       if (data) {
         // 判断我是创建者还是加入者
-        const isCreator = data.creator_nickname === userData?.nickname
-        setPartner({
-          nickname: isCreator ? data.joiner_nickname : data.creator_nickname,
-          avatar: isCreator ? data.joiner_avatar : data.creator_avatar
-        })
+        const isCreator = data.creator_nickname === currentUser?.nickname
+        const partnerNickname = isCreator ? data.joiner_nickname : data.creator_nickname
+        const partnerAvatar = isCreator ? data.joiner_avatar : data.creator_avatar
+
+        if (partnerNickname) {
+          setPartner({
+            nickname: partnerNickname,
+            avatar: partnerAvatar
+          })
+        }
       }
     } catch (error) {
       console.error('获取对方信息失败:', error)
