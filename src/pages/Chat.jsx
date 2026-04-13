@@ -120,6 +120,10 @@ export default function Chat({ onNavigate, topic }) {
   const handleCompleteTopic = async () => {
     if (!currentTopic) return
 
+    // 检查是否已经获得过亲密度奖励
+    const savedRewardedTopics = localStorage.getItem('tanDanRewardedTopics')
+    let rewardedTopics = savedRewardedTopics ? JSON.parse(savedRewardedTopics) : []
+
     // 标记当前话题为已完成
     const savedCompletedTopics = localStorage.getItem('tanDanCompletedTopics')
     let completedTopics = savedCompletedTopics ? JSON.parse(savedCompletedTopics) : []
@@ -129,28 +133,22 @@ export default function Chat({ onNavigate, topic }) {
       localStorage.setItem('tanDanCompletedTopics', JSON.stringify(completedTopics))
     }
 
-    // 获取今日话题列表
-    const topicType = currentTopic.type // light, medium, heavy
-    const storageKey = topicType === 'light' ? 'tanDanLightMissions' :
-                       topicType === 'medium' ? 'tanDanMediumMissions' : 'tanDanHeavyMissions'
-    const savedTopics = localStorage.getItem(storageKey)
-    const todayTopics = savedTopics ? JSON.parse(savedTopics) : []
+    // 如果还没有获得过亲密度奖励，则增加亲密度
+    if (!rewardedTopics.includes(currentTopic.id)) {
+      rewardedTopics.push(currentTopic.id)
+      localStorage.setItem('tanDanRewardedTopics', JSON.stringify(rewardedTopics))
 
-    // 检查是否该类型所有话题都完成了
-    const allCompleted = todayTopics.every(t => completedTopics.includes(t.id))
-
-    if (allCompleted) {
-      // 全部完成，增加亲密度
+      // 增加亲密度
       const rewards = { light: 8, medium: 15, heavy: 30 }
-      const points = rewards[topicType] || 8
+      const points = rewards[currentTopic.type] || 8
 
       const newIntimacy = await addIntimacy(coupleId, points)
       setIntimacy(newIntimacy)
 
-      alert(`🎉 ${topicType === 'light' ? '轻度' : topicType === 'medium' ? '中度' : '重度'}话题全部完成！亲密度 +${points}`)
+      const typeNames = { light: '轻度', medium: '中度', heavy: '重度' }
+      alert(`🎉 ${typeNames[currentTopic.type]}话题完成！亲密度 +${points}`)
     } else {
-      const remaining = todayTopics.filter(t => !completedTopics.includes(t.id)).length
-      alert(`✓ 话题已标记完成！还剩 ${remaining} 个${topicType === 'light' ? '轻度' : topicType === 'medium' ? '中度' : '重度'}话题`)
+      alert('✓ 话题已标记完成！')
     }
 
     await setCurrentTopic(coupleId, null)
