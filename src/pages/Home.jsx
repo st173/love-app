@@ -90,7 +90,7 @@ const petMoods = {
 }
 
 const petActions = [
-  { id: 'pet', emoji: '🤗', title: '抚摸', cost: 0, happiness: 5 },
+  { id: 'pet', emoji: '🤗', title: '抚摸', cost: 3, happiness: 5 },
   { id: 'play', emoji: '🎾', title: '玩耍', cost: 5, happiness: 15, hunger: -5 },
   { id: 'feed', emoji: '🍖', title: '喂食', cost: 10, hunger: 20, happiness: 5 },
   { id: 'train', emoji: '🎯', title: '训练', cost: 15, happiness: 10, health: 5 },
@@ -251,7 +251,47 @@ export default function Home({ onNavigate }) {
       await loadPartnerInfo()
     }, 3000)
 
-    return () => clearInterval(refreshInterval)
+    // 宠物能力值衰减（每小时执行一次）
+    const decayPetStats = () => {
+      const lastDecay = localStorage.getItem('tanDanLastPetDecay')
+      const now = Date.now()
+      const oneHour = 60 * 60 * 1000
+
+      if (lastDecay) {
+        const hoursPassed = Math.floor((now - parseInt(lastDecay)) / oneHour)
+        if (hoursPassed >= 1) {
+          const savedPets = localStorage.getItem('tanDanPets')
+          if (savedPets) {
+            const currentPets = JSON.parse(savedPets)
+            const decayAmount = Math.min(hoursPassed, 10) * 2 // 每小时衰减2点，最多计算10小时
+
+            const updatedPets = currentPets.map(pet => ({
+              ...pet,
+              happiness: Math.max(0, pet.happiness - decayAmount),
+              health: Math.max(0, pet.health - decayAmount),
+              hunger: Math.max(0, pet.hunger - decayAmount)
+            }))
+
+            localStorage.setItem('tanDanPets', JSON.stringify(updatedPets))
+            setPets(updatedPets)
+            savePets(coupleId, updatedPets)
+          }
+          localStorage.setItem('tanDanLastPetDecay', now.toString())
+        }
+      } else {
+        localStorage.setItem('tanDanLastPetDecay', now.toString())
+      }
+    }
+
+    decayPetStats()
+
+    // 每分钟检查一次是否需要衰减
+    const decayInterval = setInterval(decayPetStats, 60000)
+
+    return () => {
+      clearInterval(refreshInterval)
+      clearInterval(decayInterval)
+    }
   }, [coupleId])
 
   // 保存数据到云端
