@@ -840,6 +840,29 @@ export default function Home({ onNavigate }) {
 
             {/* 开发调试按钮 */}
             <button
+              onClick={async () => {
+                const { createClient } = await import('@supabase/supabase-js')
+                const supabase = createClient(
+                  'https://boqhqohnzcnvqllkqthg.supabase.co',
+                  'sb_publishable_C7dzSyAlSqG3h4P_lfKFnw__uDUEhOE'
+                )
+                const { data, error } = await supabase
+                  .from('couples')
+                  .select('*')
+                  .eq('id', coupleId)
+                  .single()
+
+                const savedUser = localStorage.getItem('tanDanUser')
+                const userData = savedUser ? JSON.parse(savedUser) : null
+
+                alert(`调试信息:\n\n你的昵称: ${userData?.nickname}\n你的coupleId: ${coupleId}\n\n数据库数据:\n创建者: ${data?.creator_nickname}\n加入者: ${data?.joiner_nickname}\n\n错误: ${error?.message || '无'}`)
+              }}
+              className="w-full py-2 text-gray-300 text-xs hover:text-gray-500 transition-colors mt-2"
+            >
+              查看数据库数据（调试）
+            </button>
+
+            <button
               onClick={() => {
                 localStorage.removeItem('tanDanRewardedTopics')
                 localStorage.removeItem('tanDanCompletedTopics')
