@@ -1,27 +1,158 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { CuteButton, CuteCard } from '../components/common/CuteUI'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  'https://boqhqohnzcnvqllkqthg.supabase.co',
+  'sb_publishable_C7dzSyAlSqG3h4P_lfKFnw__uDUEhOE'
+)
 
 export default function Welcome({ onNavigate }) {
-  const { user } = useAuth()
+  const { setUser } = useAuth()
+  const [coupleCode, setCoupleCode] = useState('')
+  const [nickname, setNickname] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [showNickname, setShowNickname] = useState(false)
 
-  const handleStart = () => {
-    setLoading(true)
-    try {
-      const savedUser = localStorage.getItem('tanDanUser')
-      if (savedUser) {
-        const userData = JSON.parse(savedUser)
-        if (userData.coupleId) {
-          onNavigate('home')
-          return
-        }
-      }
-      onNavigate('pair')
-    } catch (error) {
-      console.error('Error:', error)
-      onNavigate('pair')
+  // 处理输入，只允许字母，自动转大写
+  const handleCodeChange = (e) => {
+    const value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '')
+    if (value.length <= 6) {
+      setCoupleCode(value)
+      setError('')
     }
+  }
+
+  // 验证情侣码格式
+  const isValidCode = (code) => {
+    return /^[A-Z]{6}$/.test(code)
+  }
+
+  // 进入/创建房间
+  const handleEnter = async () => {
+    if (!isValidCode(coupleCode)) {
+      setError('请输入6个字母的情侣码')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const coupleId = 'couple_' + coupleCode.toLowerCase()
+
+      // 检查房间是否存在
+      const { data: existingCouple } = await supabase
+        .from('couples')
+        .select('*')
+        .eq('id', coupleId)
+        .single()
+
+      if (existingCouple) {
+        // 房间已存在，恢复数据
+        const savedUser = localStorage.getItem('tanDanUser')
+        let userData = savedUser ? JSON.parse(savedUser) : null
+
+        // 检查是否是同一个用户
+        if (userData && userData.coupleId === coupleId) {
+          // 同一用户，直接进入
+          setUser(userData)
+          onNavigate('home')
+        } else {
+          // 新设备或新用户，需要设置昵称
+          setShowNickname(true)
+        }
+      } else {
+        // 房间不存在，需要创建
+        setShowNickname(true)
+      }
+    } catch (err) {
+      // 查询出错，可能是房间不存在
+      setShowNickname(true)
+    }
+
+    setLoading(false)
+  }
+
+  // 创建/加入房间
+  const handleCreateOrJoin = async () => {
+    if (!nickname.trim()) {
+      setError('请输入昵称')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const coupleId = 'couple_' + coupleCode.toLowerCase()
+
+      // 检查房间是否存在
+      const { data: existingCouple } = await supabase
+        .from('couples')
+        .select('*')
+        .eq('id', coupleId)
+        .single()
+
+      const userId = 'user_' + Date.now()
+      const avatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${nickname}`
+
+      if (existingCouple) {
+        // 加入已有房间
+        const isCreator = !existingCouple.joiner_nickname
+
+        if (isCreator) {
+          // 作为加入者
+          await supabase
+            .from('couples')
+            .update({
+              joiner_nickname: nickname.trim(),
+              joiner_avatar: avatar,
+              joined_at: Date.now()
+            })
+            .eq('id', coupleId)
+        }
+
+        const userData = {
+          id: userId,
+          nickname: nickname.trim(),
+          avatar,
+          coupleId,
+          partnerId: 'partner',
+        }
+
+        localStorage.setItem('tanDanUser', JSON.stringify(userData))
+        setUser(userData)
+      } else {
+        // 创建新房间
+        await supabase.from('couples').insert({
+          id: coupleId,
+          invite_code: coupleCode,
+          creator_nickname: nickname.trim(),
+          creator_avatar: avatar,
+          created_at: Date.now()
+        })
+
+        const userData = {
+          id: userId,
+          nickname: nickname.trim(),
+          avatar,
+          coupleId,
+          inviteCode: coupleCode,
+        }
+
+        localStorage.setItem('tanDanUser', JSON.stringify(userData))
+        setUser(userData)
+      }
+
+      onNavigate('home')
+    } catch (err) {
+      setError('操作失败，请重试')
+      console.error(err)
+    }
+
     setLoading(false)
   }
 
@@ -44,55 +175,81 @@ export default function Welcome({ onNavigate }) {
       {/* 标题 */}
       <h1 className="text-5xl font-bold gradient-text mb-3 tracking-wide">坦丹升温</h1>
       <p className="text-gray-500 mb-2 text-center font-medium">让爱更有温度</p>
-      <p className="text-gray-400 text-sm mb-10 text-center max-w-xs">
-        异地恋专属互动平台，每天一点小甜蜜
+      <p className="text-gray-400 text-sm mb-8 text-center max-w-xs">
+        输入你们的专属情侣码，数据永久保存
       </p>
 
-      {/* 特性卡片 */}
-      <div className="grid grid-cols-2 gap-4 mb-10 w-full max-w-sm">
-        <CuteCard className="text-center animate-fadeInUp" style={{animationDelay: '0.1s'}}>
-          <div className="text-4xl mb-3">🎮</div>
-          <div className="font-medium text-gray-700">每日任务</div>
-          <div className="text-xs text-gray-400 mt-1">一起完成小目标</div>
-        </CuteCard>
-        <CuteCard className="text-center animate-fadeInUp" style={{animationDelay: '0.2s'}}>
-          <div className="text-4xl mb-3">🔥</div>
-          <div className="font-medium text-gray-700">升温挑战</div>
-          <div className="text-xs text-gray-400 mt-1">解锁更多甜蜜</div>
-        </CuteCard>
-        <CuteCard className="text-center animate-fadeInUp" style={{animationDelay: '0.3s'}}>
-          <div className="text-4xl mb-3">🐕</div>
-          <div className="font-medium text-gray-700">萌宠养成</div>
-          <div className="text-xs text-gray-400 mt-1">康康和球球陪你</div>
-        </CuteCard>
-        <CuteCard className="text-center animate-fadeInUp" style={{animationDelay: '0.4s'}}>
-          <div className="text-4xl mb-3">❤️</div>
-          <div className="font-medium text-gray-700">感情温度</div>
-          <div className="text-xs text-gray-400 mt-1">记录爱的热度</div>
-        </CuteCard>
-      </div>
+      {/* 情侣码输入 */}
+      <CuteCard className="w-full max-w-sm mb-6">
+        <div className="text-center">
+          <p className="text-gray-600 mb-3 font-medium">🔑 情侣码</p>
+          <input
+            type="text"
+            value={coupleCode}
+            onChange={handleCodeChange}
+            placeholder="输入6个字母"
+            className="w-full text-center text-3xl font-bold tracking-widest bg-white/80 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-pink-300 uppercase"
+            maxLength={6}
+            disabled={showNickname}
+          />
+          <p className="text-xs text-gray-400 mt-2">
+            例如：LOVEUS、FOREVR、SWEETY
+          </p>
+        </div>
+      </CuteCard>
 
-      {/* 开始按钮 */}
+      {/* 昵称输入（首次进入时显示） */}
+      {showNickname && (
+        <CuteCard className="w-full max-w-sm mb-6 animate-fadeInUp">
+          <div className="text-center">
+            <p className="text-gray-600 mb-3 font-medium">😊 你的昵称</p>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="让TA怎么称呼你？"
+              className="w-full text-center text-xl bg-white/80 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-pink-300"
+              maxLength={10}
+            />
+          </div>
+        </CuteCard>
+      )}
+
+      {/* 错误提示 */}
+      {error && (
+        <div className="mb-4 text-center text-red-400 text-sm bg-red-50 rounded-xl py-2 px-4">
+          {error}
+        </div>
+      )}
+
+      {/* 按钮 */}
       <CuteButton
-        onClick={handleStart}
-        disabled={loading}
+        onClick={showNickname ? handleCreateOrJoin : handleEnter}
+        disabled={loading || coupleCode.length !== 6}
         size="lg"
         className="w-full max-w-xs shadow-lg"
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
             <span className="animate-spin">⏳</span>
-            加载中...
+            处理中...
           </span>
+        ) : showNickname ? (
+          '进入房间 💕'
         ) : (
-          '开启甜蜜之旅 💕'
+          '输入情侣码进入 💕'
         )}
       </CuteButton>
 
-      {/* 底部提示 */}
-      <p className="text-xs text-gray-300 mt-8">
-        点击开始即表示同意服务条款
-      </p>
+      {/* 提示 */}
+      <div className="mt-6 text-center max-w-xs">
+        <p className="text-xs text-gray-400">
+          💡 两人使用相同的情侣码即可同步数据
+        </p>
+        <p className="text-xs text-gray-300 mt-1">
+          记住你们的情侣码，下次登录数据还在
+        </p>
+      </div>
     </div>
   )
 }
