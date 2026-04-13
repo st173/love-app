@@ -174,37 +174,48 @@ export default function Home({ onNavigate }) {
     try {
       // 直接从localStorage获取最新的用户数据
       const savedUser = localStorage.getItem('tanDanUser')
-      const currentUser = savedUser ? JSON.parse(savedUser) : userData
+      const currentUser = savedUser ? JSON.parse(savedUser) : null
+
+      console.log('=== 加载对方信息 ===')
+      console.log('coupleId:', coupleId)
+      console.log('当前用户:', currentUser)
 
       const { createClient } = await import('@supabase/supabase-js')
       const supabase = createClient(
         'https://boqhqohnzcnvqllkqthg.supabase.co',
         'sb_publishable_C7dzSyAlSqG3h4P_lfKFnw__uDUEhOE'
       )
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('couples')
         .select('*')
         .eq('id', coupleId)
         .single()
 
-      console.log('加载对方信息 - couples数据:', data)
-      console.log('当前用户昵称:', currentUser?.nickname)
+      console.log('数据库查询结果:', data)
+      console.log('查询错误:', error)
 
       if (data) {
+        console.log('创建者:', data.creator_nickname)
+        console.log('加入者:', data.joiner_nickname)
+
         // 判断我是创建者还是加入者
         const isCreator = data.creator_nickname === currentUser?.nickname
-        console.log('是否是创建者:', isCreator)
+        console.log('我是创建者?', isCreator)
 
         const partnerNickname = isCreator ? data.joiner_nickname : data.creator_nickname
         const partnerAvatar = isCreator ? data.joiner_avatar : data.creator_avatar
 
-        console.log('对方昵称:', partnerNickname, '对方头像:', partnerAvatar)
+        console.log('对方昵称:', partnerNickname)
+        console.log('对方头像:', partnerAvatar)
 
         if (partnerNickname) {
           setPartner({
             nickname: partnerNickname,
             avatar: partnerAvatar
           })
+          console.log('已设置partner状态')
+        } else {
+          console.log('对方昵称为空，未设置partner')
         }
       }
     } catch (error) {
