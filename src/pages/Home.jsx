@@ -797,6 +797,18 @@ export default function Home({ onNavigate }) {
               className="w-full py-3 text-gray-400 text-sm hover:text-red-400 transition-colors">
               退出登录
             </button>
+
+            {/* 开发调试按钮 */}
+            <button
+              onClick={() => {
+                localStorage.removeItem('tanDanRewardedTopics')
+                localStorage.removeItem('tanDanCompletedTopics')
+                alert('已重置话题奖励记录，可以重新获得亲密度奖励')
+              }}
+              className="w-full py-2 text-gray-300 text-xs hover:text-gray-500 transition-colors mt-2"
+            >
+              重置话题奖励记录（测试用）
+            </button>
           </div>
         )}
       </div>

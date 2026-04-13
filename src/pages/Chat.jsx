@@ -120,6 +120,9 @@ export default function Chat({ onNavigate, topic }) {
   const handleCompleteTopic = async () => {
     if (!currentTopic) return
 
+    console.log('完成话题:', currentTopic)
+    console.log('话题类型:', currentTopic.type)
+
     // 检查是否已经获得过亲密度奖励
     const savedRewardedTopics = localStorage.getItem('tanDanRewardedTopics')
     let rewardedTopics = savedRewardedTopics ? JSON.parse(savedRewardedTopics) : []
@@ -138,17 +141,24 @@ export default function Chat({ onNavigate, topic }) {
       rewardedTopics.push(currentTopic.id)
       localStorage.setItem('tanDanRewardedTopics', JSON.stringify(rewardedTopics))
 
-      // 增加亲密度
-      const rewards = { light: 8, medium: 15, heavy: 30 }
-      const points = rewards[currentTopic.type] || 8
+      // 增加亲密度 - 根据话题类型确定奖励
+      let rewardPoints = 8 // 默认轻度
+      if (currentTopic.type === 'medium') {
+        rewardPoints = 15
+      } else if (currentTopic.type === 'heavy') {
+        rewardPoints = 30
+      }
 
-      const newIntimacy = await addIntimacy(coupleId, points)
+      console.log('准备增加亲密度:', rewardPoints)
+
+      const newIntimacy = await addIntimacy(coupleId, rewardPoints)
+      console.log('增加后的亲密度:', newIntimacy)
       setIntimacy(newIntimacy)
 
       const typeNames = { light: '轻度', medium: '中度', heavy: '重度' }
-      alert(`🎉 ${typeNames[currentTopic.type]}话题完成！亲密度 +${points}`)
+      alert(`🎉 ${typeNames[currentTopic.type] || '轻度'}话题完成！亲密度 +${rewardPoints}\n当前等级: Lv.${newIntimacy.level}`)
     } else {
-      alert('✓ 话题已标记完成！')
+      alert('✓ 话题已标记完成！（已获得过奖励）')
     }
 
     await setCurrentTopic(coupleId, null)
