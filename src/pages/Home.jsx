@@ -567,6 +567,18 @@ export default function Home({ onNavigate }) {
                   <span className="text-sm text-gray-600 w-10">{pets[selectedPet].hunger}%</span>
                 </div>
               </div>
+
+              {/* 能力值衰减提示 */}
+              <div className="mt-4 bg-orange-50 rounded-xl p-3 text-left">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg">⚠️</span>
+                  <div className="text-xs text-orange-700">
+                    <p className="font-bold mb-1">能力值会随时间衰减</p>
+                    <p>每小时各项能力值自动 <span className="font-bold text-orange-600">-2</span></p>
+                    <p className="text-orange-500 mt-1">记得每天照顾宠物哦～</p>
+                  </div>
+                </div>
+              </div>
             </CuteCard>
 
             <div className="grid grid-cols-3 gap-2">
