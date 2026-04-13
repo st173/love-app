@@ -42,13 +42,16 @@ export default function Welcome({ onNavigate }) {
 
     try {
       const coupleId = 'couple_' + coupleCode.toLowerCase()
+      console.log('检查情侣码:', coupleCode, 'coupleId:', coupleId)
 
       // 检查房间是否存在
-      const { data: existingCouple } = await supabase
+      const { data: existingCouple, error: queryError } = await supabase
         .from('couples')
         .select('*')
         .eq('id', coupleId)
         .single()
+
+      console.log('查询结果:', existingCouple, '错误:', queryError)
 
       if (existingCouple) {
         // 房间已存在，恢复数据
@@ -70,6 +73,7 @@ export default function Welcome({ onNavigate }) {
       }
     } catch (err) {
       // 查询出错，可能是房间不存在
+      console.error('查询异常:', err)
       setShowNickname(true)
     }
 
@@ -101,10 +105,9 @@ export default function Welcome({ onNavigate }) {
 
       if (existingCouple) {
         // 加入已有房间
-        const isCreator = !existingCouple.joiner_nickname
-
-        if (isCreator) {
-          // 作为加入者
+        // 检查是否已经有加入者
+        if (!existingCouple.joiner_nickname) {
+          // 作为加入者加入
           await supabase
             .from('couples')
             .update({
@@ -125,15 +128,49 @@ export default function Welcome({ onNavigate }) {
 
         localStorage.setItem('tanDanUser', JSON.stringify(userData))
         setUser(userData)
+        onNavigate('home')
       } else {
         // 创建新房间
-        await supabase.from('couples').insert({
+        const { error: insertError } = await supabase.from('couples').insert({
           id: coupleId,
           invite_code: coupleCode,
           creator_nickname: nickname.trim(),
           creator_avatar: avatar,
           created_at: Date.now()
         })
+
+        if (insertError) {
+          // 可能是并发创建，尝试再次查询并加入
+          console.log('插入失败，可能是并发创建，尝试加入')
+          const { data: retryCouple } = await supabase
+            .from('couples')
+            .select('*')
+            .eq('id', coupleId)
+            .single()
+
+          if (retryCouple && !retryCouple.joiner_nickname) {
+            await supabase
+              .from('couples')
+              .update({
+                joiner_nickname: nickname.trim(),
+                joiner_avatar: avatar,
+                joined_at: Date.now()
+              })
+              .eq('id', coupleId)
+          }
+
+          const userData = {
+            id: userId,
+            nickname: nickname.trim(),
+            avatar,
+            coupleId,
+          }
+
+          localStorage.setItem('tanDanUser', JSON.stringify(userData))
+          setUser(userData)
+          onNavigate('home')
+          return
+        }
 
         const userData = {
           id: userId,
@@ -145,9 +182,8 @@ export default function Welcome({ onNavigate }) {
 
         localStorage.setItem('tanDanUser', JSON.stringify(userData))
         setUser(userData)
+        onNavigate('home')
       }
-
-      onNavigate('home')
     } catch (err) {
       setError('操作失败，请重试')
       console.error(err)
