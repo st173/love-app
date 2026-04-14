@@ -286,7 +286,19 @@ export default function Home({ onNavigate }) {
       // 加载宠物数据（优先云端，其次本地，最后默认）
       const savedPets = localStorage.getItem('tanDanPets')
       if (savedPets) {
-        setPets(JSON.parse(savedPets))
+        const parsedPets = JSON.parse(savedPets)
+        // 检查宠物数据是否有效（各项值不全为0）
+        const isValid = parsedPets.some(p => p.health > 0 || p.happiness > 0 || p.hunger > 0)
+        if (isValid) {
+          setPets(parsedPets)
+        } else {
+          // 数据无效，重置为默认值
+          setPets(defaultPets)
+          localStorage.setItem('tanDanPets', JSON.stringify(defaultPets))
+          if (currentCoupleId) {
+            savePets(currentCoupleId, defaultPets)
+          }
+        }
       } else {
         // 新用户，初始化宠物并保存到云端
         setPets(defaultPets)
