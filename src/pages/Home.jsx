@@ -99,8 +99,8 @@ const petActions = [
 ]
 
 const defaultPets = [
-  { id: 'kangkang', name: '康康', emoji: '🐕', breed: '金毛', level: 1, exp: 0, health: 100, happiness: 80, hunger: 70 },
-  { id: 'qiuqiu', name: '球球', emoji: '🐶', breed: '柯基', level: 1, exp: 0, health: 100, happiness: 90, hunger: 60 },
+  { id: 'kangkang', name: '康康', emoji: '🐕', breed: '金毛', level: 1, exp: 0, health: 50, happiness: 30, hunger: 30 },
+  { id: 'qiuqiu', name: '球球', emoji: '🐶', breed: '柯基', level: 1, exp: 0, health: 50, happiness: 30, hunger: 30 },
 ]
 
 // 生成每日任务
