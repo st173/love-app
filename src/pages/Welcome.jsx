@@ -49,7 +49,7 @@ export default function Welcome({ onNavigate }) {
         .from('couples')
         .select('*')
         .eq('id', coupleId)
-        .single()
+        .maybeSingle()
 
       console.log('查询结果:', existingCouple, '错误:', queryError)
 
@@ -61,6 +61,16 @@ export default function Welcome({ onNavigate }) {
         // 检查是否是同一个用户
         if (userData && userData.coupleId === coupleId) {
           // 同一用户，直接进入
+          // 确保 tanDanCouple 也存在
+          if (!localStorage.getItem('tanDanCouple')) {
+            const coupleData = {
+              id: coupleId,
+              members: [userData.id],
+              loveScore: 500,
+              createdAt: new Date().toISOString(),
+            }
+            localStorage.setItem('tanDanCouple', JSON.stringify(coupleData))
+          }
           setUser(userData)
           onNavigate('home')
         } else {
@@ -126,7 +136,16 @@ export default function Welcome({ onNavigate }) {
           partnerId: 'partner',
         }
 
+        // 保存配对数据到 localStorage
+        const coupleData = {
+          id: coupleId,
+          members: [userId, 'partner'],
+          loveScore: 500,
+          createdAt: new Date().toISOString(),
+        }
+
         localStorage.setItem('tanDanUser', JSON.stringify(userData))
+        localStorage.setItem('tanDanCouple', JSON.stringify(coupleData))
         setUser(userData)
         onNavigate('home')
       } else {
@@ -146,7 +165,7 @@ export default function Welcome({ onNavigate }) {
             .from('couples')
             .select('*')
             .eq('id', coupleId)
-            .single()
+            .maybeSingle()
 
           if (retryCouple && !retryCouple.joiner_nickname) {
             await supabase
@@ -166,7 +185,16 @@ export default function Welcome({ onNavigate }) {
             coupleId,
           }
 
+          // 保存配对数据到 localStorage
+          const coupleData = {
+            id: coupleId,
+            members: [userId],
+            loveScore: 500,
+            createdAt: new Date().toISOString(),
+          }
+
           localStorage.setItem('tanDanUser', JSON.stringify(userData))
+          localStorage.setItem('tanDanCouple', JSON.stringify(coupleData))
           setUser(userData)
           onNavigate('home')
           return
@@ -180,7 +208,16 @@ export default function Welcome({ onNavigate }) {
           inviteCode: coupleCode,
         }
 
+        // 保存配对数据到 localStorage
+        const coupleData = {
+          id: coupleId,
+          members: [userId],
+          loveScore: 500,
+          createdAt: new Date().toISOString(),
+        }
+
         localStorage.setItem('tanDanUser', JSON.stringify(userData))
+        localStorage.setItem('tanDanCouple', JSON.stringify(coupleData))
         setUser(userData)
         onNavigate('home')
       }

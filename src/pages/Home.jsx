@@ -165,20 +165,47 @@ export default function Home({ onNavigate }) {
   const [partner, setPartner] = useState(null)
   const [completedTopics, setCompletedTopics] = useState([])
 
-  const coupleData = couple || JSON.parse(localStorage.getItem('tanDanCouple') || '{}')
-  const coupleId = coupleData?.id || 'default_couple'
-  const userData = user || JSON.parse(localStorage.getItem('tanDanUser') || '{}')
+  // 从 localStorage 获取最新的用户数据和 coupleId
+  const getUserData = () => {
+    const savedUser = localStorage.getItem('tanDanUser')
+    return savedUser ? JSON.parse(savedUser) : null
+  }
+
+  const getCoupleData = () => {
+    const savedCouple = localStorage.getItem('tanDanCouple')
+    return savedCouple ? JSON.parse(savedCouple) : null
+  }
+
+  const userData = user || getUserData()
 
   // 加载对方信息
   const loadPartnerInfo = async () => {
-    try {
-      // 直接从localStorage获取最新的用户数据
-      const savedUser = localStorage.getItem('tanDanUser')
-      const currentUser = savedUser ? JSON.parse(savedUser) : null
+    // 获取最新的 coupleId - 优先从用户数据获取
+    const currentUserData = getUserData()
+    const currentCoupleData = getCoupleData()
 
+    // 优先使用用户数据中的 coupleId，这才是正确的
+    const currentCoupleId = currentUserData?.coupleId || currentCoupleData?.id
+
+    if (!currentCoupleId) {
+      console.log('coupleId 不存在，跳过加载对方信息')
+      return
+    }
+
+    // 如果 coupleData 中的 id 与用户数据不一致，更新它
+    if (currentCoupleData && currentCoupleData.id !== currentCoupleId) {
+      console.log('检测到 coupleId 不一致，更新 tanDanCouple')
+      const updatedCoupleData = {
+        ...currentCoupleData,
+        id: currentCoupleId
+      }
+      localStorage.setItem('tanDanCouple', JSON.stringify(updatedCoupleData))
+    }
+
+    try {
       console.log('=== 加载对方信息 ===')
-      console.log('coupleId:', coupleId)
-      console.log('当前用户:', currentUser)
+      console.log('coupleId:', currentCoupleId)
+      console.log('当前用户:', currentUserData)
 
       const { createClient } = await import('@supabase/supabase-js')
       const supabase = createClient(
@@ -188,35 +215,44 @@ export default function Home({ onNavigate }) {
       const { data, error } = await supabase
         .from('couples')
         .select('*')
-        .eq('id', coupleId)
-        .single()
+        .eq('id', currentCoupleId)
+        .maybeSingle()
 
       console.log('数据库查询结果:', data)
       console.log('查询错误:', error)
 
-      if (data) {
-        console.log('创建者:', data.creator_nickname)
-        console.log('加入者:', data.joiner_nickname)
+      if (error) {
+        console.error('查询出错:', error)
+        return
+      }
 
-        // 判断我是创建者还是加入者
-        const isCreator = data.creator_nickname === currentUser?.nickname
-        console.log('我是创建者?', isCreator)
+      if (!data) {
+        console.log('未找到配对数据')
+        return
+      }
 
-        const partnerNickname = isCreator ? data.joiner_nickname : data.creator_nickname
-        const partnerAvatar = isCreator ? data.joiner_avatar : data.creator_avatar
+      console.log('创建者:', data.creator_nickname)
+      console.log('加入者:', data.joiner_nickname)
 
-        console.log('对方昵称:', partnerNickname)
-        console.log('对方头像:', partnerAvatar)
+      // 判断我是创建者还是加入者
+      const isCreator = data.creator_nickname === currentUserData?.nickname
+      console.log('我是创建者?', isCreator)
 
-        if (partnerNickname) {
-          setPartner({
-            nickname: partnerNickname,
-            avatar: partnerAvatar
-          })
-          console.log('已设置partner状态')
-        } else {
-          console.log('对方昵称为空，未设置partner')
-        }
+      const partnerNickname = isCreator ? data.joiner_nickname : data.creator_nickname
+      const partnerAvatar = isCreator ? data.joiner_avatar : data.creator_avatar
+
+      console.log('对方昵称:', partnerNickname)
+      console.log('对方头像:', partnerAvatar)
+
+      if (partnerNickname) {
+        setPartner({
+          nickname: partnerNickname,
+          avatar: partnerAvatar
+        })
+        console.log('已设置partner状态')
+      } else {
+        console.log('对方昵称为空，未设置partner')
+        setPartner(null)
       }
     } catch (error) {
       console.error('获取对方信息失败:', error)
@@ -225,11 +261,22 @@ export default function Home({ onNavigate }) {
 
   useEffect(() => {
     const initData = async () => {
+      // 获取最新的用户和配对数据
+      const currentUserData = getUserData()
+      const currentCoupleData = getCoupleData()
+      // 优先使用用户数据中的 coupleId，这才是正确的
+      const currentCoupleId = currentUserData?.coupleId || currentCoupleData?.id
+
+      console.log('=== Home 初始化 ===')
+      console.log('用户数据:', currentUserData)
+      console.log('配对数据:', currentCoupleData)
+      console.log('coupleId:', currentCoupleId)
+
       // 检查云服务配置
-      if (isCloudConfigured()) {
+      if (isCloudConfigured() && currentCoupleId) {
         setSyncStatus('connected')
         // 从云端加载数据
-        await loadAllData(coupleId)
+        await loadAllData(currentCoupleId)
         // 加载对方信息
         await loadPartnerInfo()
       } else {
@@ -302,7 +349,13 @@ export default function Home({ onNavigate }) {
 
             localStorage.setItem('tanDanPets', JSON.stringify(updatedPets))
             setPets(updatedPets)
-            savePets(coupleId, updatedPets)
+
+            const currentCoupleData = getCoupleData()
+            const currentUserData = getUserData()
+            const coupleIdForSave = currentUserData?.coupleId || currentCoupleData?.id
+            if (coupleIdForSave) {
+              savePets(coupleIdForSave, updatedPets)
+            }
           }
           localStorage.setItem('tanDanLastPetDecay', now.toString())
         }
@@ -320,13 +373,17 @@ export default function Home({ onNavigate }) {
       clearInterval(refreshInterval)
       clearInterval(decayInterval)
     }
-  }, [coupleId])
+  }, [])
 
   // 保存数据到云端
   const saveDataToCloud = async () => {
-    if (isCloudConfigured()) {
-      await savePets(coupleId, pets)
-      await savePoints(coupleId, points)
+    const currentCoupleData = getCoupleData()
+    const currentUserData = getUserData()
+    const currentCoupleId = currentUserData?.coupleId || currentCoupleData?.id
+
+    if (isCloudConfigured() && currentCoupleId) {
+      await savePets(currentCoupleId, pets)
+      await savePoints(currentCoupleId, points)
     }
   }
 
@@ -341,6 +398,10 @@ export default function Home({ onNavigate }) {
 
   const handleDailySign = async () => {
     if (signedToday) return
+
+    const currentCoupleData = getCoupleData()
+    const currentUserData = getUserData()
+    const currentCoupleId = currentUserData?.coupleId || currentCoupleData?.id
 
     const today = new Date().toDateString()
     const lastSign = localStorage.getItem('tanDanLastSign')
@@ -357,7 +418,9 @@ export default function Home({ onNavigate }) {
 
     const newPoints = points + totalPoints
     setPoints(newPoints)
-    await savePoints(coupleId, newPoints)
+    if (currentCoupleId) {
+      await savePoints(currentCoupleId, newPoints)
+    }
 
     setSignStreak(newStreak)
     setSignedToday(true)
@@ -369,12 +432,18 @@ export default function Home({ onNavigate }) {
   const handlePetAction = async (action) => {
     if (points < action.cost) return
 
+    const currentCoupleData = getCoupleData()
+    const currentUserData = getUserData()
+    const currentCoupleId = currentUserData?.coupleId || currentCoupleData?.id
+
     const newPets = [...pets]
     const pet = newPets[selectedPet]
 
     const newPoints = points - action.cost
     setPoints(newPoints)
-    await savePoints(coupleId, newPoints)
+    if (currentCoupleId) {
+      await savePoints(currentCoupleId, newPoints)
+    }
 
     if (action.happiness) pet.happiness = Math.min(100, Math.max(0, pet.happiness + action.happiness))
     if (action.hunger) pet.hunger = Math.min(100, Math.max(0, pet.hunger + action.hunger))
@@ -387,29 +456,45 @@ export default function Home({ onNavigate }) {
     }
 
     setPets(newPets)
-    await savePets(coupleId, newPets)
+    if (currentCoupleId) {
+      await savePets(currentCoupleId, newPets)
+    }
   }
 
   const completeMission = async (mission) => {
     if (completedMissions.includes(mission.id)) return
 
+    const currentCoupleData = getCoupleData()
+    const currentUserData = getUserData()
+    const currentCoupleId = currentUserData?.coupleId || currentCoupleData?.id
+
     const newPoints = points + mission.points
     setPoints(newPoints)
-    await savePoints(coupleId, newPoints)
+    if (currentCoupleId) {
+      await savePoints(currentCoupleId, newPoints)
+    }
 
     const newCompleted = [...completedMissions, mission.id]
     setCompletedMissions(newCompleted)
     localStorage.setItem('tanDanCompletedMissions', JSON.stringify(newCompleted))
 
-    await saveTaskProgress(coupleId, mission.id, { completed: true, timestamp: Date.now() })
+    if (currentCoupleId) {
+      await saveTaskProgress(currentCoupleId, mission.id, { completed: true, timestamp: Date.now() })
+    }
   }
 
   const unlockHeavyMode = async () => {
     if (points < 50) return
 
+    const currentCoupleData = getCoupleData()
+    const currentUserData = getUserData()
+    const currentCoupleId = currentUserData?.coupleId || currentCoupleData?.id
+
     const newPoints = points - 50
     setPoints(newPoints)
-    await savePoints(coupleId, newPoints)
+    if (currentCoupleId) {
+      await savePoints(currentCoupleId, newPoints)
+    }
 
     setHeavyUnlocked(true)
     localStorage.setItem('tanDanHeavyUnlocked', 'true')
@@ -841,25 +926,57 @@ export default function Home({ onNavigate }) {
             {/* 开发调试按钮 */}
             <button
               onClick={async () => {
+                const currentUserData = getUserData()
+                const currentCoupleData = getCoupleData()
+                const currentCoupleId = currentUserData?.coupleId || currentCoupleData?.id
+
+                // 显示 localStorage 中的所有数据
+                const tanDanUser = localStorage.getItem('tanDanUser')
+                const tanDanCouple = localStorage.getItem('tanDanCouple')
+
+                console.log('=== 完整调试信息 ===')
+                console.log('tanDanUser:', tanDanUser)
+                console.log('tanDanCouple:', tanDanCouple)
+                console.log('currentUserData:', currentUserData)
+                console.log('currentCoupleData:', currentCoupleData)
+                console.log('currentCoupleId:', currentCoupleId)
+
                 const { createClient } = await import('@supabase/supabase-js')
                 const supabase = createClient(
                   'https://boqhqohnzcnvqllkqthg.supabase.co',
                   'sb_publishable_C7dzSyAlSqG3h4P_lfKFnw__uDUEhOE'
                 )
-                const { data, error } = await supabase
-                  .from('couples')
-                  .select('*')
-                  .eq('id', coupleId)
-                  .single()
 
-                const savedUser = localStorage.getItem('tanDanUser')
-                const userData = savedUser ? JSON.parse(savedUser) : null
+                let data = null
+                let error = null
+                if (currentCoupleId) {
+                  const result = await supabase
+                    .from('couples')
+                    .select('*')
+                    .eq('id', currentCoupleId)
+                    .maybeSingle()
+                  data = result.data
+                  error = result.error
+                }
 
-                alert(`调试信息:\n\n你的昵称: ${userData?.nickname}\n你的coupleId: ${coupleId}\n\n数据库数据:\n创建者: ${data?.creator_nickname}\n加入者: ${data?.joiner_nickname}\n\n错误: ${error?.message || '无'}`)
+                alert(`调试信息 (v1.0.1):
+
+你的昵称: ${currentUserData?.nickname || '无'}
+你的 coupleId: ${currentCoupleId || '无'}
+
+localStorage:
+tanDanUser: ${tanDanUser ? '有数据' : '无'}
+tanDanCouple: ${tanDanCouple ? '有数据' : '无'}
+
+数据库数据:
+创建者: ${data?.creator_nickname || '无'}
+加入者: ${data?.joiner_nickname || '无'}
+
+错误: ${error?.message || '无'}`)
               }}
               className="w-full py-2 text-gray-300 text-xs hover:text-gray-500 transition-colors mt-2"
             >
-              查看数据库数据（调试）
+              查看数据库数据（调试 v1.0.1）
             </button>
 
             <button
