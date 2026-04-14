@@ -128,17 +128,22 @@ export default function Chat({ onNavigate, topic }) {
   }
 
   const handleCompleteTopic = async () => {
-    if (!currentTopic) return
+    // 使用 currentTopic 或 topic prop
+    const topicToComplete = currentTopic || topic
+    if (!topicToComplete) {
+      console.log('没有话题可完成')
+      return
+    }
 
-    console.log('完成话题:', currentTopic)
-    console.log('话题类型:', currentTopic.type)
+    console.log('完成话题:', topicToComplete)
+    console.log('话题类型:', topicToComplete.type)
 
     // 标记当前话题为已完成
     const savedCompletedTopics = localStorage.getItem('tanDanCompletedTopics')
     let completedTopics = savedCompletedTopics ? JSON.parse(savedCompletedTopics) : []
 
-    if (!completedTopics.includes(currentTopic.id)) {
-      completedTopics.push(currentTopic.id)
+    if (!completedTopics.includes(topicToComplete.id)) {
+      completedTopics.push(topicToComplete.id)
       localStorage.setItem('tanDanCompletedTopics', JSON.stringify(completedTopics))
     }
 
@@ -149,16 +154,16 @@ export default function Chat({ onNavigate, topic }) {
     console.log('=== 话题完成检查 ===')
     console.log('当前日期:', today)
     console.log('保存日期:', savedDate)
-    console.log('话题类型:', currentTopic.type)
+    console.log('话题类型:', topicToComplete.type)
 
     // 获取该类型的今日话题
     let todayTopicIds = []
-    const typeKey = currentTopic.type // 'light', 'medium', 'heavy'
-    const storageKey = `tanDan${typeKey.charAt(0).toUpperCase() + typeKey.slice(1)}Missions`
+    const topicType = topicToComplete.type // 'light', 'medium', 'heavy'
+    const storageKey = `tanDan${topicType.charAt(0).toUpperCase() + topicType.slice(1)}Missions`
     const savedTopics = localStorage.getItem(storageKey)
 
     console.log('存储Key:', storageKey)
-    console.log('存储数据:', savedTopics)
+    console.log('存储数据:', savedTopics ? '有数据' : '无数据')
 
     if (savedTopics) {
       try {
@@ -168,6 +173,8 @@ export default function Chat({ onNavigate, topic }) {
       } catch (e) {
         console.error('解析话题数据失败:', e)
       }
+    } else {
+      console.log('话题数据不存在，可能需要先进入话题页面')
     }
 
     // 检查该类型所有话题是否都完成
@@ -182,17 +189,17 @@ export default function Chat({ onNavigate, topic }) {
       // 检查是否已经获得过该类型的奖励
       const savedRewardedTypes = localStorage.getItem('tanDanRewardedTypes')
       let rewardedTypes = savedRewardedTypes ? JSON.parse(savedRewardedTypes) : []
-      const typeKey = `${currentTopic.type}_${today}`
+      const rewardKey = `${topicType}_${today}`
 
-      if (!rewardedTypes.includes(typeKey)) {
-        rewardedTypes.push(typeKey)
+      if (!rewardedTypes.includes(rewardKey)) {
+        rewardedTypes.push(rewardKey)
         localStorage.setItem('tanDanRewardedTypes', JSON.stringify(rewardedTypes))
 
         // 增加亲密度 - 根据话题类型确定奖励
         let rewardPoints = 8 // 默认轻度
-        if (currentTopic.type === 'medium') {
+        if (topicType === 'medium') {
           rewardPoints = 15
-        } else if (currentTopic.type === 'heavy') {
+        } else if (topicType === 'heavy') {
           rewardPoints = 30
         }
 
@@ -203,13 +210,14 @@ export default function Chat({ onNavigate, topic }) {
         setIntimacy(newIntimacy)
 
         const typeNames = { light: '轻度', medium: '中度', heavy: '重度' }
-        alert(`🎉 ${typeNames[currentTopic.type]}话题全部完成！亲密度 +${rewardPoints}\n当前等级: Lv.${newIntimacy.level}`)
+        alert(`🎉 ${typeNames[topicType]}话题全部完成！亲密度 +${rewardPoints}\n当前等级: Lv.${newIntimacy.level}`)
       } else {
         alert('✓ 话题已标记完成！（已获得过该类型奖励）')
       }
     } else {
       const typeNames = { light: '轻度', medium: '中度', heavy: '重度' }
-      alert(`✓ 话题已标记完成！\n${typeNames[currentTopic.type]}话题进度: ${completedCount}/${todayTopicIds.length || 3}\n完成全部可获得亲密度奖励！`)
+      const total = todayTopicIds.length || 3
+      alert(`✓ 话题已标记完成！\n${typeNames[topicType]}话题进度: ${completedCount}/${total}\n完成全部可获得亲密度奖励！`)
     }
 
     await setCurrentTopic(coupleId, null)
