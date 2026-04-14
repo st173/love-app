@@ -146,11 +146,19 @@ export default function Chat({ onNavigate, topic }) {
     const today = new Date().toDateString()
     const savedDate = localStorage.getItem('tanDanMissionDate')
 
+    console.log('=== 话题完成检查 ===')
+    console.log('当前日期:', today)
+    console.log('保存日期:', savedDate)
+
     let todayTopics = []
     if (savedDate === today) {
       const savedLight = localStorage.getItem('tanDanLightMissions')
       const savedMedium = localStorage.getItem('tanDanMediumMissions')
       const savedHeavy = localStorage.getItem('tanDanHeavyMissions')
+
+      console.log('轻度话题缓存:', savedLight)
+      console.log('中度话题缓存:', savedMedium)
+      console.log('重度话题缓存:', savedHeavy)
 
       if (currentTopic.type === 'light' && savedLight) {
         todayTopics = JSON.parse(savedLight)
@@ -161,10 +169,13 @@ export default function Chat({ onNavigate, topic }) {
       }
     }
 
-    // 检查该类型所有话题是否都完成
-    const allTopicsCompleted = todayTopics.every(t => completedTopics.includes(t.id))
+    console.log('今日该类型话题:', todayTopics)
+    console.log('话题数量:', todayTopics.length)
 
-    console.log('今日该类型话题:', todayTopics.map(t => t.id))
+    // 检查该类型所有话题是否都完成
+    // 必须有话题且全部完成才给奖励
+    const allTopicsCompleted = todayTopics.length > 0 && todayTopics.every(t => completedTopics.includes(t.id))
+
     console.log('已完成话题:', completedTopics)
     console.log('是否全部完成:', allTopicsCompleted)
 
