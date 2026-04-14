@@ -33,7 +33,8 @@ export default function Chat({ onNavigate, topic }) {
 
   const userData = user || JSON.parse(localStorage.getItem('tanDanUser') || '{}')
   const coupleData = JSON.parse(localStorage.getItem('tanDanCouple') || '{}')
-  const coupleId = coupleData?.id || 'default_couple'
+  // 优先使用用户数据中的 coupleId
+  const coupleId = userData?.coupleId || coupleData?.id || 'default_couple'
   const myId = userData?.id || 'user_1'
 
   useEffect(() => {
