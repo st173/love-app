@@ -147,7 +147,7 @@ export default function Home({ onNavigate }) {
   const { couple } = useCouple()
   const [activeTab, setActiveTab] = useState('mission')
   const [selectedPet, setSelectedPet] = useState(0)
-  const [pets, setPets] = useState(defaultPets)
+  const [pets, setPets] = useState(null) // null 表示还没加载
   const [points, setPoints] = useState(0)
   const [intimacy, setIntimacy] = useState({ level: 1, points: 0, totalPoints: 0 })
   const [dailyMissions, setDailyMissions] = useState({ delta: [], sing: [], movie: [], light: [], medium: [], heavy: [] })
@@ -283,9 +283,18 @@ export default function Home({ onNavigate }) {
         setSyncStatus('not_configured')
       }
 
-      // 加载本地数据
+      // 加载宠物数据（优先云端，其次本地，最后默认）
       const savedPets = localStorage.getItem('tanDanPets')
-      if (savedPets) setPets(JSON.parse(savedPets))
+      if (savedPets) {
+        setPets(JSON.parse(savedPets))
+      } else {
+        // 新用户，初始化宠物并保存到云端
+        setPets(defaultPets)
+        localStorage.setItem('tanDanPets', JSON.stringify(defaultPets))
+        if (currentCoupleId) {
+          savePets(currentCoupleId, defaultPets)
+        }
+      }
 
       const savedPoints = localStorage.getItem('tanDanPoints')
       if (savedPoints) setPoints(parseInt(savedPoints))
@@ -322,6 +331,10 @@ export default function Home({ onNavigate }) {
 
       const savedCompletedTopics = localStorage.getItem('tanDanCompletedTopics')
       if (savedCompletedTopics) setCompletedTopics(JSON.parse(savedCompletedTopics))
+
+      // 刷新宠物数据
+      const savedPets = localStorage.getItem('tanDanPets')
+      if (savedPets) setPets(JSON.parse(savedPets))
 
       await loadPartnerInfo()
     }, 3000)
