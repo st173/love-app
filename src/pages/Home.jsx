@@ -148,7 +148,7 @@ export default function Home({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('mission')
   const [selectedPet, setSelectedPet] = useState(0)
   const [pets, setPets] = useState(defaultPets)
-  const [points, setPoints] = useState(100)
+  const [points, setPoints] = useState(0)
   const [intimacy, setIntimacy] = useState({ level: 1, points: 0, totalPoints: 0 })
   const [dailyMissions, setDailyMissions] = useState({ delta: [], sing: [], movie: [], light: [], medium: [], heavy: [] })
   const [completedMissions, setCompletedMissions] = useState([])
@@ -484,13 +484,13 @@ export default function Home({ onNavigate }) {
   }
 
   const unlockHeavyMode = async () => {
-    if (points < 50) return
+    if (points < 100) return
 
     const currentCoupleData = getCoupleData()
     const currentUserData = getUserData()
     const currentCoupleId = currentUserData?.coupleId || currentCoupleData?.id
 
-    const newPoints = points - 50
+    const newPoints = points - 100
     setPoints(newPoints)
     if (currentCoupleId) {
       await savePoints(currentCoupleId, newPoints)
@@ -806,15 +806,15 @@ export default function Home({ onNavigate }) {
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold text-gray-700">🔥 重度话题</h3>
                 <span className="text-xs text-gray-400">
-                  {heavyUnlocked ? `${completedTopics.filter(id => dailyMissions.heavy.some(t => t.id === id)).length}/${dailyMissions.heavy.length} 完成 +30亲密度` : '需50积分解锁'}
+                  {heavyUnlocked ? `${completedTopics.filter(id => dailyMissions.heavy.some(t => t.id === id)).length}/${dailyMissions.heavy.length} 完成 +30亲密度` : '需100积分解锁'}
                 </span>
               </div>
               {!heavyUnlocked ? (
                 <CuteCard className="text-center">
                   <div className="text-4xl mb-2">🔒</div>
                   <p className="text-gray-500 mb-3">解锁重度话题模式</p>
-                  <CuteButton onClick={unlockHeavyMode} disabled={points < 50}>
-                    {points >= 50 ? '💎 50积分解锁' : `需要50积分 (当前${points})`}
+                  <CuteButton onClick={unlockHeavyMode} disabled={points < 100}>
+                    {points >= 100 ? '💎 100积分解锁' : `需要100积分 (当前${points})`}
                   </CuteButton>
                 </CuteCard>
               ) : (

@@ -254,7 +254,7 @@ export const getPoints = async (coupleId) => {
   }
 
   const saved = localStorage.getItem('tanDanPoints')
-  return saved ? parseInt(saved) : 100
+  return saved ? parseInt(saved) : 0
 }
 
 // ==================== 任务进度同步 ====================

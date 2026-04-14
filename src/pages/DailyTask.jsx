@@ -7,7 +7,7 @@ export default function DailyTask({ onNavigate, mission }) {
   const { user } = useAuth()
   const [imagePreview, setImagePreview] = useState(null)
   const [submitted, setSubmitted] = useState(false)
-  const [points, setPoints] = useState(100)
+  const [points, setPoints] = useState(0)
 
   const userData = user || JSON.parse(localStorage.getItem('tanDanUser') || '{}')
   const coupleData = JSON.parse(localStorage.getItem('tanDanCouple') || '{}')
