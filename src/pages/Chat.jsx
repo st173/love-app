@@ -132,10 +132,6 @@ export default function Chat({ onNavigate, topic }) {
     console.log('完成话题:', currentTopic)
     console.log('话题类型:', currentTopic.type)
 
-    // 检查是否已经获得过亲密度奖励
-    const savedRewardedTopics = localStorage.getItem('tanDanRewardedTopics')
-    let rewardedTopics = savedRewardedTopics ? JSON.parse(savedRewardedTopics) : []
-
     // 标记当前话题为已完成
     const savedCompletedTopics = localStorage.getItem('tanDanCompletedTopics')
     let completedTopics = savedCompletedTopics ? JSON.parse(savedCompletedTopics) : []
@@ -145,29 +141,66 @@ export default function Chat({ onNavigate, topic }) {
       localStorage.setItem('tanDanCompletedTopics', JSON.stringify(completedTopics))
     }
 
-    // 如果还没有获得过亲密度奖励，则增加亲密度
-    if (!rewardedTopics.includes(currentTopic.id)) {
-      rewardedTopics.push(currentTopic.id)
-      localStorage.setItem('tanDanRewardedTopics', JSON.stringify(rewardedTopics))
+    // 检查该类型的所有话题是否都完成了
+    // 从 Home.jsx 的任务池中获取今日话题
+    const today = new Date().toDateString()
+    const savedDate = localStorage.getItem('tanDanMissionDate')
 
-      // 增加亲密度 - 根据话题类型确定奖励
-      let rewardPoints = 8 // 默认轻度
-      if (currentTopic.type === 'medium') {
-        rewardPoints = 15
-      } else if (currentTopic.type === 'heavy') {
-        rewardPoints = 30
+    let todayTopics = []
+    if (savedDate === today) {
+      const savedLight = localStorage.getItem('tanDanLightMissions')
+      const savedMedium = localStorage.getItem('tanDanMediumMissions')
+      const savedHeavy = localStorage.getItem('tanDanHeavyMissions')
+
+      if (currentTopic.type === 'light' && savedLight) {
+        todayTopics = JSON.parse(savedLight)
+      } else if (currentTopic.type === 'medium' && savedMedium) {
+        todayTopics = JSON.parse(savedMedium)
+      } else if (currentTopic.type === 'heavy' && savedHeavy) {
+        todayTopics = JSON.parse(savedHeavy)
       }
+    }
 
-      console.log('准备增加亲密度:', rewardPoints)
+    // 检查该类型所有话题是否都完成
+    const allTopicsCompleted = todayTopics.every(t => completedTopics.includes(t.id))
 
-      const newIntimacy = await addIntimacy(coupleId, rewardPoints)
-      console.log('增加后的亲密度:', newIntimacy)
-      setIntimacy(newIntimacy)
+    console.log('今日该类型话题:', todayTopics.map(t => t.id))
+    console.log('已完成话题:', completedTopics)
+    console.log('是否全部完成:', allTopicsCompleted)
 
-      const typeNames = { light: '轻度', medium: '中度', heavy: '重度' }
-      alert(`🎉 ${typeNames[currentTopic.type] || '轻度'}话题完成！亲密度 +${rewardPoints}\n当前等级: Lv.${newIntimacy.level}`)
+    if (allTopicsCompleted) {
+      // 检查是否已经获得过该类型的奖励
+      const savedRewardedTypes = localStorage.getItem('tanDanRewardedTypes')
+      let rewardedTypes = savedRewardedTypes ? JSON.parse(savedRewardedTypes) : []
+      const typeKey = `${currentTopic.type}_${today}`
+
+      if (!rewardedTypes.includes(typeKey)) {
+        rewardedTypes.push(typeKey)
+        localStorage.setItem('tanDanRewardedTypes', JSON.stringify(rewardedTypes))
+
+        // 增加亲密度 - 根据话题类型确定奖励
+        let rewardPoints = 8 // 默认轻度
+        if (currentTopic.type === 'medium') {
+          rewardPoints = 15
+        } else if (currentTopic.type === 'heavy') {
+          rewardPoints = 30
+        }
+
+        console.log('全部完成！准备增加亲密度:', rewardPoints)
+
+        const newIntimacy = await addIntimacy(coupleId, rewardPoints)
+        console.log('增加后的亲密度:', newIntimacy)
+        setIntimacy(newIntimacy)
+
+        const typeNames = { light: '轻度', medium: '中度', heavy: '重度' }
+        alert(`🎉 ${typeNames[currentTopic.type]}话题全部完成！亲密度 +${rewardPoints}\n当前等级: Lv.${newIntimacy.level}`)
+      } else {
+        alert('✓ 话题已标记完成！（已获得过该类型奖励）')
+      }
     } else {
-      alert('✓ 话题已标记完成！（已获得过奖励）')
+      const completedCount = todayTopics.filter(t => completedTopics.includes(t.id)).length
+      const typeNames = { light: '轻度', medium: '中度', heavy: '重度' }
+      alert(`✓ 话题已标记完成！\n${typeNames[currentTopic.type]}话题进度: ${completedCount}/${todayTopics.length}\n完成全部可获得亲密度奖励！`)
     }
 
     await setCurrentTopic(coupleId, null)
