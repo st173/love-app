@@ -245,8 +245,10 @@ export const getPoints = async (coupleId) => {
         .single()
 
       if (data?.points !== undefined) {
-        localStorage.setItem('tanDanPoints', data.points.toString())
-        return data.points
+        // 如果云端是默认值100，视为新用户，返回0
+        const points = data.points === 100 ? 0 : data.points
+        localStorage.setItem('tanDanPoints', points.toString())
+        return points
       }
     } catch (error) {
       console.error('获取积分失败:', error)
