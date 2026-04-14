@@ -141,42 +141,40 @@ export default function Chat({ onNavigate, topic }) {
       localStorage.setItem('tanDanCompletedTopics', JSON.stringify(completedTopics))
     }
 
-    // 检查该类型的所有话题是否都完成了
-    // 从 Home.jsx 的任务池中获取今日话题
+    // 获取今日该类型的所有话题ID
     const today = new Date().toDateString()
     const savedDate = localStorage.getItem('tanDanMissionDate')
 
     console.log('=== 话题完成检查 ===')
     console.log('当前日期:', today)
     console.log('保存日期:', savedDate)
+    console.log('话题类型:', currentTopic.type)
 
-    let todayTopics = []
-    if (savedDate === today) {
-      const savedLight = localStorage.getItem('tanDanLightMissions')
-      const savedMedium = localStorage.getItem('tanDanMediumMissions')
-      const savedHeavy = localStorage.getItem('tanDanHeavyMissions')
+    // 获取该类型的今日话题
+    let todayTopicIds = []
+    const typeKey = currentTopic.type // 'light', 'medium', 'heavy'
+    const storageKey = `tanDan${typeKey.charAt(0).toUpperCase() + typeKey.slice(1)}Missions`
+    const savedTopics = localStorage.getItem(storageKey)
 
-      console.log('轻度话题缓存:', savedLight)
-      console.log('中度话题缓存:', savedMedium)
-      console.log('重度话题缓存:', savedHeavy)
+    console.log('存储Key:', storageKey)
+    console.log('存储数据:', savedTopics)
 
-      if (currentTopic.type === 'light' && savedLight) {
-        todayTopics = JSON.parse(savedLight)
-      } else if (currentTopic.type === 'medium' && savedMedium) {
-        todayTopics = JSON.parse(savedMedium)
-      } else if (currentTopic.type === 'heavy' && savedHeavy) {
-        todayTopics = JSON.parse(savedHeavy)
+    if (savedTopics) {
+      try {
+        const topics = JSON.parse(savedTopics)
+        todayTopicIds = topics.map(t => t.id)
+        console.log('今日话题IDs:', todayTopicIds)
+      } catch (e) {
+        console.error('解析话题数据失败:', e)
       }
     }
 
-    console.log('今日该类型话题:', todayTopics)
-    console.log('话题数量:', todayTopics.length)
-
     // 检查该类型所有话题是否都完成
-    // 必须有话题且全部完成才给奖励
-    const allTopicsCompleted = todayTopics.length > 0 && todayTopics.every(t => completedTopics.includes(t.id))
+    const completedCount = todayTopicIds.filter(id => completedTopics.includes(id)).length
+    const allTopicsCompleted = todayTopicIds.length > 0 && completedCount >= todayTopicIds.length
 
-    console.log('已完成话题:', completedTopics)
+    console.log('已完成数量:', completedCount)
+    console.log('总数量:', todayTopicIds.length)
     console.log('是否全部完成:', allTopicsCompleted)
 
     if (allTopicsCompleted) {
@@ -209,9 +207,8 @@ export default function Chat({ onNavigate, topic }) {
         alert('✓ 话题已标记完成！（已获得过该类型奖励）')
       }
     } else {
-      const completedCount = todayTopics.filter(t => completedTopics.includes(t.id)).length
       const typeNames = { light: '轻度', medium: '中度', heavy: '重度' }
-      alert(`✓ 话题已标记完成！\n${typeNames[currentTopic.type]}话题进度: ${completedCount}/${todayTopics.length}\n完成全部可获得亲密度奖励！`)
+      alert(`✓ 话题已标记完成！\n${typeNames[currentTopic.type]}话题进度: ${completedCount}/${todayTopicIds.length || 3}\n完成全部可获得亲密度奖励！`)
     }
 
     await setCurrentTopic(coupleId, null)
